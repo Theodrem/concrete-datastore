@@ -74,7 +74,7 @@ class ChangePasswordTestCase(APITestCase):
         confirmation.save()
 
         self.simple_user_2 = User.objects.create_user(
-            email='simple2@simple2.simple2'
+            email='simple2@simple2.simple2', password="password1"
         )
         confirmation = UserConfirmation.objects.create(user=self.simple_user_2)
         confirmation.confirmed = True
@@ -300,4 +300,17 @@ class ChangePasswordTestCase(APITestCase):
         """
         # POST an invalid arguiment and get an error (400)
         resp = self.client.post(self.url_change, {})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(ALLOW_REUSE_PASSWORD_ON_CHANGE=False)
+    def test_change_password_with_old_password(self):
+        resp = self.client.post(
+            self.url_change,
+            {
+                "email": self.simple_user_2.email,
+                "password1": "password1",
+                "password2": "password1",
+            },
+            HTTP_AUTHORIZATION='Token {}'.format(self.simple_user_2_token),
+        )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
